@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 export default function Community(){
   const [posts, setPosts] = useState([{
-    id:1, author:'Team', text:'Welcome to Community Connect! Share your ideas to encourage first-time voters.'
+    id:1, author:'Team', text:'Welcome to Civic Quest! Share your ideas to encourage first-time voters.'
   }])
   const [text, setText] = useState('')
   function post(){

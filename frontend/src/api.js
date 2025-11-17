@@ -31,7 +31,7 @@ export const resetUserProgress = () => {
 
 // Share functionality
 export const shareAchievement = (score, points) => {
-  const text = `I just scored ${score} points in the Civic Awareness Quiz! 🗳️ Join me in learning about our democratic rights at Community Connect! #CivicAwareness #YouthVoting`
+  const text = `I just scored ${score} points in the Civic Awareness Quiz! 🗳️ Join me in learning about our democratic rights at Civic Quest! #CivicAwareness #YouthVoting`
   
   if (navigator.share) {
     navigator.share({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { quizQuestions, motivationalQuotes, pointsSystem, rewardTiers } from '../data/quizData'
+import { quizQuestions, motivationalQuotes, pointsSystem, rewardTiers, levelSystem } from '../data/quizData'
 
 export default function Quiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -83,8 +83,39 @@ export default function Quiz() {
     } else {
       // Quiz completed
       const completionPoints = pointsSystem.quizCompletion
-      const finalPoints = totalPoints + completionPoints
+      let bonusPoints = 0
+      
+      // Perfect score bonus
+      const percentage = Math.round((score / questions.length) * 100)
+      if (percentage === 100) {
+        bonusPoints += pointsSystem.perfectScore
+      }
+      
+      // Update daily streak
+      const today = new Date().toDateString()
+      const lastQuizDate = localStorage.getItem('lastQuizDate')
+      const currentStreak = parseInt(localStorage.getItem('streakCount') || '0')
+      
+      if (lastQuizDate === today) {
+        // Already completed today, no streak update
+      } else {
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        if (lastQuizDate === yesterday.toDateString()) {
+          // Continue streak
+          localStorage.setItem('streakCount', (currentStreak + 1).toString())
+          bonusPoints += pointsSystem.streakBonus * (currentStreak + 1)
+        } else {
+          // New streak
+          localStorage.setItem('streakCount', '1')
+        }
+        localStorage.setItem('lastQuizDate', today)
+        localStorage.setItem('dailyStreak', new Date().toISOString())
+      }
+      
+      const finalPoints = totalPoints + completionPoints + bonusPoints
       setTotalPoints(finalPoints)
+      
       localStorage.setItem('civicPoints', finalPoints.toString())
       setQuizCompleted(true)
     }
@@ -109,7 +140,12 @@ export default function Quiz() {
   if (quizCompleted) {
     const percentage = Math.round((score / questions.length) * 100)
     const completionPoints = pointsSystem.quizCompletion
-    const finalPoints = totalPoints + completionPoints
+    let bonusPoints = 0
+    if (percentage === 100) {
+      bonusPoints += pointsSystem.perfectScore
+    }
+    const finalPoints = totalPoints
+    const levelData = levelSystem.getXPProgress(finalPoints)
     
     return (
       <div className="space-y-6">
@@ -129,12 +165,29 @@ export default function Quiz() {
             <div className="text-2xl font-semibold text-indigo-600">
               {score}/{questions.length} Correct ({percentage}%)
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
               <div className="text-lg font-semibold text-green-800">
-                +{completionPoints} Points for Completion!
+                +{completionPoints} XP for Completion!
               </div>
+              {bonusPoints > 0 && (
+                <div className="text-md font-semibold text-yellow-700 bg-yellow-100 rounded p-2">
+                  🎁 Bonus: +{bonusPoints} XP {percentage === 100 ? '(Perfect Score!)' : '(Streak Bonus!)'}
+                </div>
+              )}
               <div className="text-sm text-green-600">
-                Total Points: {finalPoints}
+                Total XP: {finalPoints} | Level {levelData.level}
+              </div>
+              {/* Level Progress */}
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all"
+                    style={{ width: `${levelData.progress}%` }}
+                  ></div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {Math.round(levelData.progress)}% to Level {levelData.level + 1}
+                </div>
               </div>
             </div>
           </div>
@@ -225,7 +278,8 @@ export default function Quiz() {
           <h1 className="text-2xl font-bold text-gray-800">🗳️ Civic Awareness Quiz</h1>
           <div className="text-right">
             <div className="text-sm text-gray-600">Score: {score}/{currentQuestionIndex}</div>
-            <div className="text-sm text-indigo-600">Points: {totalPoints}</div>
+            <div className="text-sm text-indigo-600">XP: {totalPoints}</div>
+            <div className="text-xs text-purple-600">Level {levelSystem.getLevel(totalPoints)}</div>
           </div>
         </div>
         

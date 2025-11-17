@@ -172,7 +172,47 @@ export const pointsSystem = {
   quizCompletion: 50,
   shareAwareness: 20,
   inviteFriend: 30,
-  dailyStreak: 15
+  dailyStreak: 15,
+  perfectScore: 100,
+  speedBonus: 5,
+  streakBonus: 25
+};
+
+// Achievements system
+export const achievements = [
+  { id: 1, name: "First Steps", icon: "👶", description: "Complete your first quiz", unlocked: false },
+  { id: 2, name: "Perfect Score", icon: "💯", description: "Score 100% on any quiz", unlocked: false },
+  { id: 3, name: "Speed Demon", icon: "⚡", description: "Answer 5 questions in under 10 seconds each", unlocked: false },
+  { id: 4, name: "Streak Master", icon: "🔥", description: "Maintain a 7-day streak", unlocked: false },
+  { id: 5, name: "Knowledge Seeker", icon: "📚", description: "Complete 10 quizzes", unlocked: false },
+  { id: 6, name: "Civic Expert", icon: "🎓", description: "Answer 100 questions correctly", unlocked: false },
+  { id: 7, name: "Daily Champion", icon: "⭐", description: "Complete daily challenge 5 times", unlocked: false },
+  { id: 8, name: "Social Butterfly", icon: "🦋", description: "Share 3 achievements", unlocked: false }
+];
+
+// Daily challenges
+export const dailyChallenges = [
+  { id: 1, title: "Quick Learner", description: "Complete a quiz in under 5 minutes", reward: 30, icon: "⏱️" },
+  { id: 2, title: "Accuracy Master", description: "Get 8+ correct answers", reward: 40, icon: "🎯" },
+  { id: 3, title: "Speed Runner", description: "Answer 3 questions in under 5 seconds each", reward: 50, icon: "🏃" },
+  { id: 4, title: "Perfect Day", description: "Score 100% on today's quiz", reward: 75, icon: "✨" }
+];
+
+// Level system (XP based)
+export const levelSystem = {
+  getLevel: (xp) => {
+    return Math.floor(xp / 100) + 1;
+  },
+  getXPForLevel: (level) => {
+    return (level - 1) * 100;
+  },
+  getXPProgress: (xp) => {
+    const level = Math.floor(xp / 100) + 1;
+    const currentLevelXP = (level - 1) * 100;
+    const nextLevelXP = level * 100;
+    const progress = ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+    return { level, progress, currentXP: xp - currentLevelXP, neededXP: nextLevelXP - currentLevelXP };
+  }
 };
 
 // Dummy leaderboard data

@@ -1,16 +1,39 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motivationalQuotes, rewardTiers } from '../data/quizData'
+import { motivationalQuotes, rewardTiers, dailyChallenges, achievements, levelSystem } from '../data/quizData'
 
 export default function Home(){
   const [userPoints, setUserPoints] = useState(0)
   const [currentTier, setCurrentTier] = useState(null)
   const [currentQuote, setCurrentQuote] = useState('')
+  const [streak, setStreak] = useState(0)
+  const [userLevel, setUserLevel] = useState(1)
+  const [levelProgress, setLevelProgress] = useState(0)
 
   useEffect(() => {
     const savedPoints = localStorage.getItem('civicPoints')
     if (savedPoints) {
-      setUserPoints(parseInt(savedPoints))
+      const points = parseInt(savedPoints)
+      setUserPoints(points)
+      // Calculate level and progress
+      const levelData = levelSystem.getXPProgress(points)
+      setUserLevel(levelData.level)
+      setLevelProgress(levelData.progress)
+    }
+    
+    // Load streak
+    const savedStreak = localStorage.getItem('dailyStreak')
+    if (savedStreak) {
+      const lastDate = new Date(savedStreak)
+      const today = new Date()
+      const diffTime = Math.abs(today - lastDate)
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays === 1) {
+        setStreak(parseInt(localStorage.getItem('streakCount') || '0'))
+      } else if (diffDays > 1) {
+        setStreak(0)
+        localStorage.setItem('streakCount', '0')
+      }
     }
     
     // Set random quote
@@ -23,13 +46,18 @@ export default function Home(){
       .reverse()
       .find(tier => userPoints >= tier.pointsRequired)
     setCurrentTier(tier)
+    
+    // Update level
+    const levelData = levelSystem.getXPProgress(userPoints)
+    setUserLevel(levelData.level)
+    setLevelProgress(levelData.progress)
   }, [userPoints])
 
   return (
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="card gradient-bg text-white">
-        <h1 className="text-4xl font-bold">Welcome to Community Connect</h1>
+        <h1 className="text-4xl font-bold">🎮 Welcome to Civic Quest</h1>
         <p className="mt-2 text-white/90">Learn about your voting rights with bite-sized lessons and fun quizzes.</p>
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <Link to="/quiz" className="btn-primary">🗳️ Start Quiz</Link>
@@ -38,19 +66,67 @@ export default function Home(){
         </div>
       </div>
 
-      {/* User Progress Card */}
-      {userPoints > 0 && (
-        <div className="card bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200">
-          <div className="text-center space-y-3">
+      {/* User Progress Card - Enhanced with Level & Streak */}
+      <div className="card bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200">
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-4">
             <div className="text-3xl">{currentTier?.badge || '📚'}</div>
-            <h2 className="text-xl font-bold text-gray-800">
-              {currentTier?.title || 'Civic Learner'}
-            </h2>
-            <div className="text-2xl font-bold text-indigo-600">{userPoints} Points</div>
-            <p className="text-sm text-gray-600">{currentTier?.description || 'Start your civic journey!'}</p>
+            <div>
+              <div className="text-sm text-gray-600">Level {userLevel}</div>
+              <div className="text-2xl font-bold text-indigo-600">{userPoints} XP</div>
+            </div>
+            {streak > 0 && (
+              <div className="bg-orange-100 px-3 py-1 rounded-full">
+                <span className="text-orange-600 font-bold">🔥 {streak} Day Streak!</span>
+              </div>
+            )}
           </div>
+          
+          {/* Level Progress Bar */}
+          <div>
+            <div className="flex justify-between text-xs text-gray-600 mb-1">
+              <span>Level {userLevel}</span>
+              <span>Level {userLevel + 1}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${levelProgress}%` }}
+              ></div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">{Math.round(levelProgress)}% to next level</div>
+          </div>
+          
+          <h2 className="text-xl font-bold text-gray-800">
+            {currentTier?.title || 'Civic Learner'}
+          </h2>
+          <p className="text-sm text-gray-600">{currentTier?.description || 'Start your civic journey!'}</p>
         </div>
-      )}
+      </div>
+
+      {/* Daily Challenges Section */}
+      <div className="card bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span>⚡</span> Daily Challenges
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {dailyChallenges.slice(0, 2).map((challenge) => (
+            <div key={challenge.id} className="bg-white/70 rounded-lg p-3 border border-yellow-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{challenge.icon}</span>
+                  <span className="font-semibold text-sm">{challenge.title}</span>
+                </div>
+                <span className="text-xs bg-yellow-200 px-2 py-1 rounded-full font-bold">+{challenge.reward} XP</span>
+              </div>
+              <p className="text-xs text-gray-600">{challenge.description}</p>
+            </div>
+          ))}
+        </div>
+        <Link to="/quiz" className="mt-3 block text-center text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+          Complete Challenges →
+        </Link>
+      </div>
 
       {/* Motivational Quote */}
       <div className="card bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
@@ -62,24 +138,54 @@ export default function Home(){
         </div>
       </div>
 
+      {/* Achievements Preview */}
+      <div className="card">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span>🏅</span> Achievements
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {achievements.slice(0, 4).map((achievement) => (
+            <div 
+              key={achievement.id} 
+              className={`p-3 rounded-lg border-2 text-center transition-all ${
+                achievement.unlocked 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200 opacity-60'
+              }`}
+            >
+              <div className="text-2xl mb-1">{achievement.icon}</div>
+              <div className="text-xs font-semibold">{achievement.name}</div>
+              {achievement.unlocked && (
+                <div className="text-xs text-green-600 mt-1">✓ Unlocked</div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-center">
+          <span className="text-sm text-gray-600">
+            {achievements.filter(a => a.unlocked).length} / {achievements.length} unlocked
+          </span>
+        </div>
+      </div>
+
       {/* Feature Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card hover:shadow-lg transition-shadow">
+        <div className="card hover:shadow-lg transition-shadow border-2 border-indigo-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="text-2xl">🗳️</div>
             <h2 className="font-semibold">Interactive Quiz</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-3">Test your civic knowledge with timed quizzes and earn points for correct answers.</p>
-          <Link to="/quiz" className="btn-primary text-sm">Start Learning</Link>
+          <p className="text-sm text-gray-600 mb-3">Test your civic knowledge with timed quizzes and earn XP for correct answers.</p>
+          <Link to="/quiz" className="btn-primary text-sm">🎮 Start Quiz</Link>
         </div>
         
-        <div className="card hover:shadow-lg transition-shadow">
+        <div className="card hover:shadow-lg transition-shadow border-2 border-yellow-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="text-2xl">🏆</div>
             <h2 className="font-semibold">Reward System</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-3">Earn badges and climb the leaderboard as you master civic knowledge.</p>
-          <Link to="/leaderboard" className="btn-outline text-sm">View Rewards</Link>
+          <p className="text-sm text-gray-600 mb-3">Earn badges, level up, and climb the leaderboard as you master civic knowledge.</p>
+          <Link to="/leaderboard" className="btn-outline text-sm">View Leaderboard</Link>
         </div>
         
         <div className="card hover:shadow-lg transition-shadow">
